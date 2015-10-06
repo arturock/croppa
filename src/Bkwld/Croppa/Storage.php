@@ -76,9 +76,9 @@ class Storage {
 	 *
 	 * @return $this
 	 */
-	public function mount() {
-		$this->setSrcDisk($this->makeDisk($this->setting('src_dir')));
-		$this->setCropsDisk($this->makeDisk($this->setting('crops_dir')));
+	public function mount($src_dir = null, $crops_dir = null) {
+		$this->setSrcDisk($this->makeDisk($src_dir ?: $this->setting('src_dir')));
+		$this->setCropsDisk($this->makeDisk($crops_dir ?: $this->setting('crops_dir')));
 		return $this;
 	}
 
@@ -285,7 +285,7 @@ class Storage {
 	 *
 	 * @return mixed
 	 */
-	protected function setting($key, $default = null) {
+	 protected function setting($key, $default = null) {
  		if (!isset($this->config[$key])) return $default;
 
  		return is_object($setting = $this->config[$key]) && $setting instanceof \Closure ? $setting() : $setting;

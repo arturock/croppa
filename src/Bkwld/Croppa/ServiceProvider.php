@@ -91,14 +91,17 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider {
 		}
 
 		// Listen for Cropa style URLs, these are how Croppa gets triggered
-		if ($this->version() > 0) {
-			$this->app['router']
-				->get('{path}', 'Bkwld\Croppa\Handler@handle')
-				->where('path', $this->app['Bkwld\Croppa\URL']->routePattern());
-		} else {
-			$this->app->get('{path:'.$this->app['Bkwld\Croppa\URL']->routePattern().'}', [
-				'uses' => 'Bkwld\Croppa\Handler@handle',
-			]);
+		foreach ($this->app['Bkwld\Croppa\URL']->routePatterns() as $pattern) {
+			if ($this->version() > 0) {
+				$this->app['router']
+					->get('{path}', 'Bkwld\Croppa\Handler@handle')
+					->where('path', $pattern);
+			} else {
+//				$this->app->get("{path:{$pattern}}", [
+				$this->app->get("library/{path:.*}", [
+					'uses' => 'Bkwld\Croppa\Handler@handle',
+				]);
+			}
 		}
 	}
 

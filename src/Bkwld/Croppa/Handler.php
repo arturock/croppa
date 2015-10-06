@@ -39,10 +39,14 @@ class Handler extends Controller {
 	 * Handles a Croppa style route
 	 *
 	 * @param string $request The `Request::path()`
-	 * @throws Exception 
+	 * @throws Exception
 	 * @return Symfony\Component\HttpFoundation\StreamedResponse
 	 */
 	public function handle($request) {
+		// TODO: THIS FOR MAKE LUMEN WORK WITH CUSTOM SRC DIRS
+		$request = $this->request->path();
+		$dir = dirname($request);
+		$this->storage->mount($dir, $dir.'/thumbs');
 
 		// Validate the signing token
 		if (($token = $this->url->signingToken($request))
@@ -53,43 +57,42 @@ class Handler extends Controller {
 		// Get crop path relative to it's dir
 		$crop_path = $this->url->relativePath($request);
 
-		// If the crops_dir is a remote disk, check if the path exists on it and redirect
-		if (($remote_crops = $this->storage->cropsAreRemote())
-			&& $this->storage->cropExists($crop_path)) {
-			return new RedirectResponse($this->url->pathToUrl($crop_path), 301);
+		$remote_crops = $this->storage->cropsAreRemote();
+
+		if (!$this->storage->cropExists($crop_path)) {
+			// Parse the path.  In the case there is an error (the pattern on the route
+			// SHOULD have caught all errors with the pattern) just return
+			if (!$params = $this->url->parse($request)) return;
+
+			list($path, $width, $height, $options) = $params;
+
+			// Check if there are too many crops already
+			if ($this->storage->tooManyCrops($path)) throw new Exception('Croppa: Max crops');
+
+			// Increase memory limit, cause some images require a lot to resize
+			ini_set('memory_limit', '128M');
+
+			// Build a new image using fetched image data
+			$image = new Image(
+				$this->storage->readSrc($path),
+				$this->url->phpThumbConfig($options)
+			);
+
+			// Process the image and write its data to disk
+			$this->storage->writeCrop($crop_path,
+				$image->process($width, $height, $options)->get()
+			);
 		}
 
-		// Parse the path.  In the case there is an error (the pattern on the route 
-		// SHOULD have caught all errors with the pattern) just return
-		if (!$params = $this->url->parse($request)) return;
-		list($path, $width, $height, $options) = $params;
-
-		// Check if there are too many crops already
-		if ($this->storage->tooManyCrops($path)) throw new Exception('Croppa: Max crops');
-
-		// Increase memory limit, cause some images require a lot to resize
-		ini_set('memory_limit', '128M');
-
-		// Build a new image using fetched image data
-		$image = new Image(
-			$this->storage->readSrc($path), 
-			$this->url->phpThumbConfig($options)
-		);
-		
-		// Process the image and write its data to disk
-		$this->storage->writeCrop($crop_path, 
-			$image->process($width, $height, $options)->get()
-		);
-
-		// Redirect to remote crops ... 
+		// Redirect to remote crops ...
 		if ($remote_crops) {
 			return new RedirectResponse($this->url->pathToUrl($crop_path), 301);
-		
+
 		// ... or echo the image data to the browser
 		} else {
 			$absolute_path = $this->storage->getLocalCropsDirPath().'/'.$crop_path;
 			return new BinaryFileResponse($absolute_path, 200, [
-				'Content-Type' => $this->getContentType($path),
+				'Content-Type' => $this->getContentType($crop_path),
 			]);
 		}
 
@@ -99,8 +102,8 @@ class Handler extends Controller {
 	 * Symfony kept returning the MIME-type of my testing jpgs as PNGs, so
 	 * determining it explicitly via looking at the path name.
 	 *
-	 * @param string $path 
-	 * @return string 
+	 * @param string $path
+	 * @return string
 	 */
 	public function getContentType($path) {
 		switch(pathinfo($path, PATHINFO_EXTENSION)) {

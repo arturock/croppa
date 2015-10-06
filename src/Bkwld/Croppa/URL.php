@@ -126,10 +126,18 @@ class URL {
 	 * to exist.  Otherwise, the lookaheads have no length and the regex fails
 	 * https://regex101.com/r/xS3nQ2/1
 	 *
-	 * @return string
+	 * @return array
 	 */
-	public function routePattern() {
-		return sprintf("(?=%s)(?=%s).+", $this->setting('path'), self::PATTERN);
+	public function routePatterns() {
+		if (!is_array($paths = $this->setting('path'))) {
+			return [sprintf("(?=%s)(?=%s).+", $this->setting('path'), self::PATTERN)];
+		}
+
+		foreach ($paths as $path) {
+			$rxPaths[] = sprintf("(?=%s)(?=%s).+", $path, self::PATTERN);
+		}
+
+		return $rxPaths;
 	}
 
 	/**
@@ -157,10 +165,14 @@ class URL {
 	 */
 	public function relativePath($url) {
 		$path = $this->toPath($url);
-		if (!preg_match('#'.$this->setting('path').'#', $path, $matches)) {
-			throw new Exception("$url doesn't match `{$this->setting('path')}`");
+		$paths = $this->setting('path');
+		foreach ($paths as $config_path) {
+			if (preg_match('#'.$config_path.'#', $path, $matches)) {
+				return $matches[1];
+			}
 		}
-		return $matches[1];
+
+		throw new Exception("$url doesn't match any of the configured paths in '".json_encode($paths)."' setting");
 	}
 
 	/**
