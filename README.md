@@ -18,7 +18,7 @@ Since 4.0, Croppa lets images be stored on remote disks like S3, Dropbox, FTP an
 
 
 
-## Installation 
+## Installation
 
 #### Server Requirements:
 
@@ -26,7 +26,7 @@ Since 4.0, Croppa lets images be stored on remote disks like S3, Dropbox, FTP an
 * [exif](http://php.net/manual/en/book.exif.php) - Required if you want to have Croppa auto-rotate images from devices like mobile phones based on exif meta data.
 
 
-#### Installation: 
+#### Installation:
 
 1. Add Croppa to your composer.json's requires: `"bkwld/croppa": "~4.0"`.  Then do a regular composer install.
 2. Add Croppa as a provider in your `app` config's provider list: `'Bkwld\Croppa\ServiceProvider',`
@@ -89,7 +89,7 @@ return [
 
 Thus, if you have `<img src="<?=Croppa::url('/uploads/file.jpg', 200, 100)?>">`, the returned URL will be `/uploads/file-200x100.jpg`, the source image will be looked for immediately within the S3 bucket that was configured as part of the Flysystem instance, and the new crop will be created at `/uploads/file-200x100.jpg`.
 
-
+Also, you can set any of the settings as a closure returning a value of the expected type, that way you can have dynamic values set.
 
 ## Usage
 
