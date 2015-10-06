@@ -77,8 +77,8 @@ class Storage {
 	 * @return $this
 	 */
 	public function mount() {
-		$this->setSrcDisk($this->makeDisk($this->config['src_dir']));
-		$this->setCropsDisk($this->makeDisk($this->config['crops_dir']));
+		$this->setSrcDisk($this->makeDisk($this->setting('src_dir')));
+		$this->setCropsDisk($this->makeDisk($this->setting('crops_dir')));
 		return $this;
 	}
 
@@ -210,8 +210,8 @@ class Storage {
 	 * @return boolean
 	 */
 	public function tooManyCrops($path) {
-		if (empty($this->config['max_crops'])) return false;
-		return count($this->listCrops($path)) >= $this->config['max_crops'];
+		if (empty($this->setting('max_crops'))) return false;
+		return count($this->listCrops($path)) >= $this->setting('max_crops');
 	}
 
 	/**
@@ -275,5 +275,19 @@ class Storage {
 
 		// Get just the path key
 		return array_map(function($file) { return $file['path']; }, $files);
+	}
+
+	/**
+	 * Gets a setting from the config array.
+	 *
+	 * @param string $key     The requested setting key
+	 * @param string $default Value to return in case no setting is found
+	 *
+	 * @return mixed
+	 */
+	protected function setting($key, $default = null) {
+ 		if (!isset($this->config[$key])) return $default;
+
+ 		return is_object($setting = $this->config[$key]) && $setting instanceof \Closure ? $setting() : $setting;
 	}
 }

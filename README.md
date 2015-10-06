@@ -18,7 +18,7 @@ Since 4.0, Croppa lets images be stored on remote disks like S3, Dropbox, FTP an
 
 
 
-## Installation 
+## Installation
 
 #### Server Requirements:
 
@@ -95,7 +95,7 @@ return [
 
 Thus, if you have `<img src="<?=Croppa::url('/uploads/file.jpg', 200, 100)?>">`, the returned URL will be `/uploads/file-200x100.jpg`, the source image will be looked for immediately within the S3 bucket that was configured as part of the Flysystem instance, and the new crop will be created at `/uploads/file-200x100.jpg`.
 
-
+Also, you can set any of the settings as a closure returning a value of the expected type, that way you can have dynamic values set.
 
 ## Usage
 
